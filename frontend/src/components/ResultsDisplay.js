@@ -12,7 +12,7 @@ import {
   Divider,
   Paper,
 } from "@mui/material";
-//import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const ResultsDisplay = ({ results }) => {
   if (!results) return null;

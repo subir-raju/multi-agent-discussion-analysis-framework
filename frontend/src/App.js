@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import InputForm from "./components/InputForm";
 import ResultsDisplay from "./components/ResultsDisplay";
-//import { analyzeDialogue } from "./services/api";
+import { analyzeDialogue } from "./services/api";
 
 const theme = createTheme({
   palette: {
