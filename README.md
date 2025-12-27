@@ -100,7 +100,7 @@ pip install -r requirements.txt
 Download NLTK Data (required for VADER):
 
 ```python
-python -c "import nltk; nltk.download('vader_lexicon'); nltk.download('punkt')"
+import nltk; nltk.download('vader_lexicon'); nltk.download('punkt')
 ```
 ### Step 3: Frontend Setup
 ```bash
