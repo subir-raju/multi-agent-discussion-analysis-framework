@@ -51,30 +51,30 @@ Project Structure
 ```bash
 multi-agent-discussion-analysis-framework/
 ├── backend/
-│   ├── main.py                 # FastAPI application entry point
-│   ├── models.py               # Data models and schemas
-│   ├── analysis_engine.py      # Core NLP/ML analysis logic
-│   ├── requirements.txt        # Python dependencies
-│   └── __init__.py
+│   ├── __pycache__/    
+│   ├── venv/
+│   ├── .env
+│   ├── analysis_engine.py
+│   ├── main.py
+│   ├── models.py
+│   └── requirements.txt
 ├── frontend/
 │   ├── public/
-│   │   └── index.html          # HTML template
+│   │   └── index.html          
 │   ├── src/
-│   │   ├── App.js              # Main React component
-│   │   ├── components/         # UI components
-│   │   │   ├── FileUpload.js
-│   │   │   ├── AnalysisResults.js
-│   │   │   └── Visualization.js
+│   │   ├── App.js         
+│   │   ├── components/    
+│   │   │   ├── InpuForm.js
+│   │   │   └── ResultsDispplay.js
 │   │   ├── services/
-│   │   │   └── api.js          # API service layer
-│   │   └── index.js            # React entry point
-│   ├── package.json            # Node.js dependencies
+│   │   │   └── api.js
+│   │   ├── App.css
+│   │   └── index.js            
+│   ├── package.json            
 │   └── package-lock.json
-├── data/
-│   └── sample_dialogue.json    # Example conversation data
-├── README.md                   # This file
-├── LICENSE                     # MIT License
-└── .gitignore                  # Git ignore rules
+├── MultiAgent_Dialogue_Example.csv
+├── README.md                  
+└── LICENSE                  
 ```
 ## Installation
 ### Prerequisites
@@ -171,5 +171,5 @@ Frontend will open automatically at: `http://localhost:3000`
 ## Contributing
 This research project was developed for academic purposes. Feedback, suggestions, and contributions are welcome.
 
-License
+## License
 This project is licensed under the MIT License - see the LICENSE file for details.
