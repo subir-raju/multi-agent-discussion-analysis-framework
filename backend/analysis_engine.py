@@ -31,6 +31,8 @@ from sklearn.ensemble import VotingClassifier
 from sklearn.linear_model import LogisticRegression
 from bertopic import BERTopic
 import networkx as nx
+import umap
+from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
@@ -310,7 +312,16 @@ class EnhancedDialogueAnalysisEngine:
             influence_metrics, sentiment_metrics, participation_metrics, topic_analysis, topic_credibility_metrics
         )
 
+        # Generate interactive data for React components
+        interactive_data = self._prepare_interactive_data(
+            dialogue, sentiment_metrics, participation_metrics, coherence_scores, topic_analysis
+        )
+
+        # Generate 3D embeddings for visualization
+        embeddings_3d = self._generate_3d_embeddings(embeddings, dialogue, topic_analysis)
+
         return AnalysisResults(
+            dialogues=request.dialogues,
             influence_metrics=influence_metrics,
             sentiment_metrics=sentiment_metrics,
             participation_metrics=participation_metrics,
@@ -318,8 +329,65 @@ class EnhancedDialogueAnalysisEngine:
             coherence_scores=coherence_scores,
             topic_shifts=topic_analysis.get('shifts', []),
             visualizations=visualizations,
-            summary_text=summary_text
+            summary_text=summary_text,
+            interactive_data=interactive_data,
+            embeddings_3d=embeddings_3d
         )
+
+    def _prepare_interactive_data(self, dialogue, sentiment_metrics, participation_metrics, coherence_scores, topic_analysis):
+        """Prepare JSON data for Recharts/Plotly"""
+        # 1. Sentiment Trend Data
+        sentiment_trend = []
+        for i, turn in enumerate(dialogue):
+            sentiment_trend.append({
+                "turn": i + 1,
+                "agent": turn["agent"],
+                "sentiment": sentiment_metrics.sentiment_labels[i],
+                "score": sentiment_metrics.topic_relevance_scores[i],
+                "coherence": coherence_scores[i] if i < len(coherence_scores) else None,
+                "text": turn["text"][:100] + "..." if len(turn["text"]) > 100 else turn["text"]
+            })
+
+        # 2. Agent Comparison Data
+        agents = list(participation_metrics.turn_counts.keys())
+        agent_stats = []
+        for agent in agents:
+            agent_stats.append({
+                "agent": agent,
+                "turns": participation_metrics.turn_counts[agent],
+                "words": participation_metrics.word_counts[agent],
+                "avg_sentiment": sentiment_metrics.avg_sentiment_per_agent[agent],
+                "relevance": sentiment_metrics.avg_topic_relevance_per_agent[agent]
+            })
+
+        return {
+            "sentiment_trend": sentiment_trend,
+            "agent_stats": agent_stats,
+            "topic_distributions": topic_analysis.get('distributions', []).tolist() if isinstance(topic_analysis.get('distributions'), np.ndarray) else []
+        }
+
+    def _generate_3d_embeddings(self, embeddings: np.ndarray, dialogue: List[Dict], topic_analysis: Dict):
+        """Project high-dimensional embeddings to 3D using UMAP/PCA"""
+        try:
+            # Use UMAP for better manifold preservation if possible
+            reducer = umap.UMAP(n_components=3, random_state=42)
+            projections = reducer.fit_transform(embeddings)
+        except:
+            # Fallback to PCA if UMAP fails
+            reducer = PCA(n_components=3)
+            projections = reducer.fit_transform(embeddings)
+
+        points = []
+        for i, turn in enumerate(dialogue):
+            points.append({
+                "x": float(projections[i, 0]),
+                "y": float(projections[i, 1]),
+                "z": float(projections[i, 2]),
+                "agent": turn["agent"],
+                "turn": i + 1,
+                "text": turn["text"][:50] + "..."
+            })
+        return points
 
     def _plot_agent_sentiment_table(self, dialogue, sentiment_labels, sentiment_word_stats):
         import matplotlib.pyplot as plt

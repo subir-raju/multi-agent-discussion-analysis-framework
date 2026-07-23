@@ -6,6 +6,7 @@ import {
   Alert,
   CircularProgress,
   Box,
+  Typography,
 } from "@mui/material";
 import InputForm from "./components/InputForm";
 import ResultsDisplay from "./components/ResultsDisplay";
@@ -52,6 +53,11 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <Box sx={{ bgcolor: '#1a1a1a', py: 1, textAlign: 'center' }}>
+        <Typography variant="caption" sx={{ color: '#4CAF50', fontWeight: 'bold' }}>
+          M-DIAL INTERACTIVE ENGINE ACTIVATED (v2.0)
+        </Typography>
+      </Box>
       <Container maxWidth="xl">
         <InputForm onSubmit={handleSubmit} loading={loading} />
 

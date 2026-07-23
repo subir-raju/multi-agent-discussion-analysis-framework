@@ -13,3 +13,4 @@ sentence-transformers>=2.2.0
 torch>=2.1.0
 Pillow>=10.0.0
 bertopic>=0.16.0
+umap-learn>=0.5.5

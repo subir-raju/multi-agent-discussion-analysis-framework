@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { TextField, Button, Typography, Box, Grid, Paper } from "@mui/material";
-import { Card } from "@mui/material";
 
 const InputForm = ({ onSubmit, loading }) => {
   const [numAgents, setNumAgents] = useState("");

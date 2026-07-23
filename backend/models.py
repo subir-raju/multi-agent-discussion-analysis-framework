@@ -24,6 +24,7 @@ class SentimentMetrics(BaseModel):
     topic_relevance_scores: List[float]
     avg_sentiment_per_agent: Dict[str, float]
     avg_topic_relevance_per_agent: Dict[str, float]
+    sentiment_word_stats: Optional[List[Dict[str, int]]] = None
 
 
 class ParticipationMetrics(BaseModel):
@@ -46,6 +47,7 @@ class TopicCredibilityMetrics(BaseModel):
 
 
 class AnalysisResults(BaseModel):
+    dialogues: List[DialogueTurn]
     influence_metrics: InfluenceMetrics
     sentiment_metrics: SentimentMetrics
     participation_metrics: ParticipationMetrics
@@ -54,3 +56,6 @@ class AnalysisResults(BaseModel):
     topic_shifts: List[Dict[str, Any]]
     visualizations: Dict[str, str]  # base64 encoded images
     summary_text: str
+    # New fields for interactive visualizations
+    interactive_data: Optional[Dict[str, Any]] = None
+    embeddings_3d: Optional[List[Dict[str, Any]]] = None

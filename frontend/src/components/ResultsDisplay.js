@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   Typography,
   Box,
@@ -11,10 +11,17 @@ import {
   Chip,
   Divider,
   Paper,
+  Button,
+  Stack,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import DownloadIcon from "@mui/icons-material/Download";
+import InteractiveCharts from "./InteractiveCharts";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const ResultsDisplay = ({ results }) => {
+  const resultsRef = useRef();
   if (!results) return null;
 
   const {
@@ -25,7 +32,34 @@ const ResultsDisplay = ({ results }) => {
     topic_shifts,
     visualizations,
     summary_text,
+    interactive_data,
+    embeddings_3d,
   } = results;
+
+  const exportToJSON = () => {
+    const dataStr = JSON.stringify(results, null, 2);
+    const dataUri =
+      "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+    const exportFileDefaultName = "mdial_analysis_results.json";
+
+    const linkElement = document.createElement("a");
+    linkElement.setAttribute("href", dataUri);
+    linkElement.setAttribute("download", exportFileDefaultName);
+    linkElement.click();
+  };
+
+  const exportToPDF = async () => {
+    const element = resultsRef.current;
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("mdial_full_report.pdf");
+  };
 
   const renderMetricValue = (value) => {
     if (typeof value === "number") {
@@ -35,10 +69,45 @@ const ResultsDisplay = ({ results }) => {
   };
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom align="center">
-        Analysis Results
-      </Typography>
+    <Box sx={{ mt: 4 }} ref={resultsRef}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 4, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+            Analysis Results
+          </Typography>
+          <Chip label="v2.0 - Interactive" size="small" color="secondary" sx={{ mt: 1 }} />
+        </Box>
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={exportToJSON}
+          >
+            Export JSON
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<DownloadIcon />}
+            onClick={exportToPDF}
+          >
+            Download PDF Report
+          </Button>
+        </Stack>
+      </Stack>
+
+      {/* Interactive Charts Section (New) */}
+      <InteractiveCharts
+        interactiveData={interactive_data}
+        embeddings3d={embeddings_3d}
+      />
+
+      <Divider sx={{ my: 6 }} />
 
       {/* Summary Section */}
       <Card
