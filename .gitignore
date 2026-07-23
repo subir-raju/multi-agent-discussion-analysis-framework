@@ -1,0 +1,37 @@
+# =====================
+# Python
+# =====================
+venv/
+.env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =====================
+# Machine Learning
+# =====================
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# =====================
+# Node / Frontend
+# =====================
+node_modules/
+frontend/node_modules/
+.cache/
+**/.cache/
+
+# =====================
+# Build / Output
+# =====================
+dist/
+build/
+
+# =====================
+# OS
+# =====================
+.DS_Store
+
