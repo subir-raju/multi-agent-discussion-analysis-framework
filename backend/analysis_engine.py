@@ -29,6 +29,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.ensemble import VotingClassifier
 from sklearn.linear_model import LogisticRegression
+from bertopic import BERTopic
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib
@@ -152,37 +153,38 @@ class GraphAttentionInfluence(nn.Module):
 
 
 class DynamicTopicModel:
-    """Dynamic topic modeling with contextual awareness"""
+    """Dynamic topic modeling with contextual awareness using BERTopic"""
 
-    def __init__(self, n_topics: int = 5, alpha: float = 0.1):
+    def __init__(self, n_topics: Union[int, str] = 'auto'):
         self.n_topics = n_topics
-        self.alpha = alpha
-        self.lda = LatentDirichletAllocation(
-            n_components=n_topics,
-            doc_topic_prior=alpha,
-            random_state=42,
-            max_iter=100
-        )
-        self.vectorizer = TfidfVectorizer(
-            max_features=1000,
-            stop_words='english',
-            ngram_range=(1, 2)
+        self.model = BERTopic(
+            nr_topics=n_topics,
+            calculate_probabilities=True,
+            verbose=False
         )
         self.topic_evolution = []
+        self.topics = None
+        self.probs = None
 
-    def fit_transform(self, texts: List[str], timestamps: List[int] = None) -> np.ndarray:
-        """Fit dynamic topic model and return topic distributions"""
-        # Vectorize texts
-        text_vectors = self.vectorizer.fit_transform(texts)
+    def fit_transform(self, texts: List[str], embeddings: np.ndarray = None, timestamps: List[int] = None) -> np.ndarray:
+        """Fit BERTopic model and return topic distributions (probabilities)"""
+        # Fit BERTopic
+        self.topics, self.probs = self.model.fit_transform(texts, embeddings)
 
-        # Fit LDA
-        topic_distributions = self.lda.fit_transform(text_vectors)
+        # Handle cases where probs might be None or not what we expect
+        if self.probs is None:
+            # Fallback to one-hot encoding if probabilities aren't calculated
+            n_topics = len(set(self.topics)) - (1 if -1 in self.topics else 0)
+            self.probs = np.zeros((len(texts), n_topics if n_topics > 0 else 1))
+            for i, t in enumerate(self.topics):
+                if t != -1 and t < self.probs.shape[1]:
+                    self.probs[i, t] = 1.0
 
         # Track topic evolution if timestamps provided
         if timestamps:
-            self._track_topic_evolution(topic_distributions, timestamps)
+            self._track_topic_evolution(self.probs, timestamps)
 
-        return topic_distributions
+        return self.probs
 
     def _track_topic_evolution(self, distributions: np.ndarray, timestamps: List[int]):
         """Track how topics evolve over time"""
@@ -191,22 +193,28 @@ class DynamicTopicModel:
 
         # Calculate topic shift magnitudes
         for i in range(1, len(sorted_distributions)):
+            # Handle potential dimension mismatch if distributions changed
             shift = np.linalg.norm(
                 sorted_distributions[i] - sorted_distributions[i-1])
+
+            # Find dominant topics (excluding noise topic -1 if necessary,
+            # but here distributions are probabilities of positive topics)
+            dominant_topics = np.argsort(sorted_distributions[i])[-3:][::-1]
+
             self.topic_evolution.append({
-                'timestamp': timestamps[sorted_indices[i]],
-                'shift_magnitude': shift,
-                'dominant_topics': np.argsort(sorted_distributions[i])[-3:][::-1]
+                'timestamp': int(timestamps[sorted_indices[i]]),
+                'shift_magnitude': float(shift),
+                'dominant_topics': [int(t) for t in dominant_topics]
             })
 
     def get_topic_keywords(self, n_words: int = 10) -> Dict[int, List[str]]:
-        """Get top keywords for each topic"""
-        feature_names = self.vectorizer.get_feature_names_out()
+        """Get top keywords for each topic from BERTopic"""
+        topic_labels = self.model.get_topics()
         topics = {}
 
-        for topic_idx, topic in enumerate(self.lda.components_):
-            top_words_idx = topic.argsort()[-n_words:][::-1]
-            topics[topic_idx] = [feature_names[i] for i in top_words_idx]
+        for topic_id, words in topic_labels.items():
+            if topic_id == -1: continue # Skip noise
+            topics[topic_id] = [word[0] for word in words[:n_words]]
 
         return topics
 
@@ -684,13 +692,14 @@ class EnhancedDialogueAnalysisEngine:
 
         # Fit dynamic topic model
         try:
-            topic_distributions = self.topic_model.fit_transform(
-                utterances, timestamps)
-            topics = self.topic_model.get_topic_keywords()
-
-            # Compute embeddings for each turn, for topic relevance calculation
+            # Compute embeddings for each turn, for BERTopic and topic relevance
             turn_embeddings = self.sentence_model.encode(
                 utterances, normalize_embeddings=True)
+
+            topic_distributions = self.topic_model.fit_transform(
+                utterances, embeddings=turn_embeddings, timestamps=timestamps)
+            topics = self.topic_model.get_topic_keywords()
+
             discussion_topic_embedding = topic_embedding  # Already precomputed and passed in
             turn_topic_relevance = [
                 float(cosine_similarity(
